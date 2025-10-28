@@ -44,26 +44,32 @@ git clone https://github.com/arnaldo211/soar-copilot-prototype.git
 cd soar-copilot-prototype
 
 Crie e ative um ambiente virtual:
-Bash
+
 python3 -m venv venv
 source venv/bin/activate
+
 Instale as dependências necessárias a partir do arquivo requirements.txt:
-Bash
+
 pip install -r requirements.txt
+
 3. Configuração das Chaves de API
 Este script requer chaves de API para os seguintes serviços:
-OpenAI: Para a análise e sugestão de ações pela IA.
-AbuseIPDB: Para consulta de reputação de IP.
+  OpenAI: Para a análise e sugestão de ações pela IA.
+  AbuseIPDB: Para consulta de reputação de IP.
 Crie um arquivo chamado .env na raiz do projeto e adicione suas chaves:
-Plain Text
+
 OPENAI_API_KEY="sk-SUA_CHAVE_DA_OPENAI_AQUI"
 ABUSEIPDB_API_KEY="SUA_CHAVE_DO_ABUSEIPDB_AQUI"
+
 Nota Importante: Em Outubro de 2025, a API da OpenAI pode requerer a adição de um método de pagamento para ativar a cota de uso da API, mesmo para novas contas. O script só funcionará com uma chave de API que tenha uma cota ativa.
 4. Execução
 Com tudo configurado, execute o script:
-Bash
+
 python3 main.py
+
 O programa solicitará um endereço de IP para iniciar a análise.
+
+===========================================================================
 🔮 Próximos Passos e Evolução
 Este protótipo é a base para uma ferramenta muito mais poderosa. As próximas etapas poderiam incluir:
  Adicionar Mais Ações: Integrar com outras APIs, como VirusTotal para análise de hashes ou Shodan para informações de hosts.
