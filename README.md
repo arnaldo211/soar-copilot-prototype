@@ -37,7 +37,3 @@ Clone o repositório e entre na pasta do projeto:
 ```bash
 git clone https://github.com/arnaldo211/soar-copilot-prototype.git
 cd soar-copilot-prototype
-
-### Mude para o branch da versão funcional:
-'''bash
-git checkout free-api-version
