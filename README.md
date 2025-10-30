@@ -1,44 +1,43 @@
-# SOAR-Copilot: Protótipo de Assistente de IA para Resposta a Incidentes
+# IP Analyzer Pro: Ferramenta de Análise de IPs em Massa
 
-![Cybersecurity AI Banner](https://i.imgur.com/e3sYn0Y.png )
+![Network Banner](https://i.imgur.com/e3sYn0Y.png )
 
 ## 📖 Visão Geral
 
-O **SOAR-Copilot** é um protótipo funcional de uma ferramenta de cibersegurança com foco em **Blue Team**. Ele simula um assistente de IA que auxilia analistas de segurança a automatizar os primeiros passos da resposta a um incidente.
+O **IP Analyzer Pro** (anteriormente SOAR-Copilot) é uma ferramenta de linha de comando desenvolvida em Python para analistas de cibersegurança e entusiastas de redes. O objetivo é automatizar e acelerar o processo de investigação de múltiplos endereços de IP.
 
-A ferramenta recebe um endereço de IP suspeito, utiliza um Modelo de Linguagem Grande (LLM) para raciocinar sobre o próximo passo investigativo e, em seguida, executa essa ação de forma autônoma, consultando a API do **AbuseIPDB** para coletar informações de ameaças.
+Esta ferramenta robusta é capaz de processar um único IP ou uma lista de IPs de um arquivo, enriquecendo cada um com dados de **geolocalização** (via ip-api.com) e **reputação de abuso** (via AbuseIPDB). Os resultados são consolidados e convenientemente salvos em um arquivo `.csv` para análise posterior.
 
-Este projeto demonstra habilidades em:
-- **Automação de Segurança (SOAR):** Orquestração de ferramentas e processos.
-- **Integração de APIs:** Conexão com serviços de IA (OpenAI) e Threat Intelligence (AbuseIPDB).
-- **Desenvolvimento em Python:** Criação de scripts robustos e modulares para cibersegurança.
-- **Gerenciamento de Credenciais:** Uso de variáveis de ambiente para proteger segredos.
+Este projeto demonstra habilidades práticas em:
+- **Desenvolvimento de Ferramentas de Segurança:** Criação de um script útil para automação de *Threat Intelligence*.
+- **Integração com Múltiplas APIs:** Comunicação e consolidação de dados de diferentes fontes externas.
+- **Processamento de Dados em Lote:** Capacidade de analisar múltiplos alvos de forma eficiente, com feedback visual através de uma barra de progresso.
+- **Manipulação de Arquivos:** Leitura de alvos de arquivos de texto e exportação de relatórios estruturados em formato CSV.
 
 ---
 
-## ⚙️ Como Funciona
+## ✨ Funcionalidades Principais
 
-O fluxo de trabalho do Copilot é simples e poderoso:
-
-1.  **Entrada do Analista:** O script solicita ao analista um endereço de IP suspeito.
-2.  **Raciocínio com IA:** O IP é enviado para um modelo de IA (GPT-3.5-Turbo) com um prompt específico, pedindo que ele sugira a próxima ação lógica em um formato JSON estruturado.
-3.  **Ação Automatizada:** O script interpreta a resposta da IA e executa a ação sugerida, que neste caso é consultar a API do AbuseIPDB.
-4.  **Relatório Final:** As informações coletadas do AbuseIPDB são formatadas e apresentadas ao analista, incluindo a pontuação de risco, país de origem e número de denúncias.
+- **Modo Duplo de Análise:** Analise um único IP rapidamente ou processe centenas de IPs de um arquivo de texto.
+- **Enriquecimento de Dados:** Integração com **ip-api.com** para geolocalização e **AbuseIPDB** para pontuação de risco.
+- **Exportação para CSV:** Gera um arquivo `relatorio_ips.csv` com todos os resultados, pronto para ser importado em planilhas ou outras ferramentas de análise.
+- **Feedback de Progresso:** Utiliza a biblioteca `tqdm` para exibir uma barra de progresso durante a análise em massa.
+- **Design Resiliente:** Lida de forma elegante com chaves de API ausentes, IPs inválidos e limites de taxa das APIs.
 
 ---
 
 ## 🚀 Como Executar
 
-Para executar este projeto localmente, siga os passos abaixo.
-
 ### 1. Pré-requisitos
-
 - Python 3.10 ou superior
 - Git
 
 ### 2. Instalação
-
-Primeiro, clone o repositório para a sua máquina:
+Clone o repositório e entre na pasta do projeto:
 ```bash
 git clone https://github.com/arnaldo211/soar-copilot-prototype.git
 cd soar-copilot-prototype
+
+### Mude para o branch da versão funcional:
+'''bash
+git checkout free-api-version
