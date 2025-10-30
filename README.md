@@ -1,6 +1,6 @@
 # IP Analyzer Pro: Ferramenta de Análise de IPs em Massa
 
-![Network Banner](https://i.imgur.com/e3sYn0Y.png )
+![Network Banner](https://i.imgur.com/e3sYn0Y.png)
 
 ## 📖 Visão Geral
 
@@ -34,6 +34,53 @@ Este projeto demonstra habilidades práticas em:
 
 ### 2. Instalação
 Clone o repositório e entre na pasta do projeto:
+
 ```bash
 git clone https://github.com/arnaldo211/soar-copilot-prototype.git
 cd soar-copilot-prototype
+```
+
+Mude para o branch da versão funcional:
+
+```bash
+git checkout free-api-version
+```
+
+Crie e ative um ambiente virtual:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Instale as dependências:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Configuração (Opcional, mas Recomendado)
+Para obter a pontuação de risco, você precisa de uma chave da AbuseIPDB.
+Crie um arquivo chamado `.env` na raiz do projeto.
+Adicione sua chave:
+
+```text
+ABUSEIPDB_API_KEY="SUA_CHAVE_DO_ABUSEIPDB_AQUI"
+```
+
+Se a chave não for fornecida, o programa funcionará normalmente, mas os campos de reputação ficarão em branco.
+
+### 4. Execução
+Execute o script e siga as instruções no menu interativo:
+
+```bash
+python3 main.py
+```
+
+## 🔮 Próximos Passos e Evolução
+
+A base sólida desta ferramenta permite várias expansões poderosas. As próximas evoluções planejadas são:
+- **Enriquecimento com Port Scanning:** Integrar a biblioteca `python-nmap` para realizar um scan rápido das portas mais comuns (ex: 80, 443, 22) em cada IP.
+- **Resolução Reversa de DNS:** Adicionar uma função que tenta descobrir os nomes de domínio associados a um IP.
+- **Configuração via Argumentos de Linha de Comando:** Usar a biblioteca `argparse` para permitir que o usuário passe o IP ou o nome do arquivo diretamente na linha de comando (ex: `python3 main.py --file ips.txt`), em vez de usar um menu interativo.
+- **Saída em Múltiplos Formatos:** Adicionar a opção de salvar o relatório em JSON ou como uma tabela formatada no terminal, além do CSV.
