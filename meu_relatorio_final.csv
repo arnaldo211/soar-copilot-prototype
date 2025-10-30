@@ -1,0 +1,6 @@
+IP,Hostname,Portas Abertas (Comuns),Pontuação de Abuso (%),Total de Denúncias,País,Cidade,Provedor (ISP),Erro
+8.8.8.8,dns.google,"53, 443",0,169,United States,Ashburn,Google LLC,
+1.1.1.1,one.one.one.one,"53, 80, 443, 8080, 8443",0,219,Australia,South Brisbane,"Cloudflare, Inc",
+185.191.171.12,12.bl.bot.semrush.com,Nenhuma porta comum aberta,100,1039,United States,Washington,SEMrush CY LTD,
+190.115.27.114,ddos-guard.net,"80, 443",0,0,Belize,Belmopan,IQWeb FZ-LLC,
+999.999.999.999,,,,,,,,invalid query
