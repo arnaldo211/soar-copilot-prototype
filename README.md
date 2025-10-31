@@ -1,94 +1,65 @@
-# IP Intelligence Service API
+# IP Intelligence Service API (Dockerized)
 
-![API Banner](https://i.imgur.com/e3sYn0Y.png)
+![Docker Banner](https://i.imgur.com/e3sYn0Y.png)
 
 ## 📖 Visão Geral
 
-O **IP Intelligence Service** é um microsserviço de API RESTful, desenvolvido em Python com **Flask**, projetado para automatizar a coleta de informações de *Threat Intelligence*. Ele transforma uma ferramenta de linha de comando em uma plataforma de serviço que pode ser consumida por outras aplicações.
+O **IP Intelligence Service** é um microsserviço de API RESTful, desenvolvido em Python com Flask e **containerizado com Docker**. O projeto foi projetado para automatizar a coleta de informações de *Threat Intelligence* de forma portátil, confiável e escalável.
 
-O serviço expõe endpoints para consultar e analisar endereços de IP, enriquecendo-os com dados de múltiplas fontes e armazenando os resultados de forma persistente em um banco de dados **SQLite**. A arquitetura inclui um sistema de cache inteligente para otimizar o desempenho e evitar chamadas de API redundantes.
+O serviço expõe endpoints para consultar e analisar endereços de IP, enriquecendo-os com dados de múltiplas fontes (geolocalização, reputação, DNS, portas abertas) e armazenando os resultados em um banco de dados **SQLite** persistente. A arquitetura inclui um sistema de cache inteligente para otimizar o desempenho.
 
-Este projeto demonstra um conjunto avançado de habilidades de desenvolvimento de back-end e DevSecOps:
-- **Desenvolvimento de APIs RESTful:** Criação de um serviço web com Flask, expondo endpoints claros e seguindo as melhores práticas.
-- **Arquitetura de Microsserviços:** Separação da lógica de negócio (`logic.py`) da camada de apresentação da API (`api.py`).
-- **Gerenciamento de Banco de Dados:** Uso de SQLite para persistência de dados, com atualizações inteligentes (`INSERT OR REPLACE`).
-- **Lógica de Cache:** Implementação de um cache baseado em tempo para otimizar a performance e o uso de recursos.
-- **Integração Multi-Fonte:** Consolidação de dados de APIs externas (ip-api.com, AbuseIPDB) e ferramentas de sistema (Nmap, DNS).
+O uso de Docker encapsula toda a aplicação, suas dependências de sistema (como `nmap`) e de Python em um contêiner isolado, garantindo que ela funcione de maneira consistente em qualquer ambiente.
 
----
-
-## 🚀 Arquitetura da API
-
-O serviço é composto por dois endpoints principais:
-
-#### `GET /query/<ip>`
-Busca um endereço de IP diretamente no banco de dados local e retorna o último relatório conhecido instantaneamente.
-- **Método:** `GET`
-- **Resposta de Sucesso (200):** Um objeto JSON com os dados do IP.
-- **Resposta de Falha (404):** Um objeto JSON de erro se o IP não for encontrado.
-
-#### `POST /analyze`
-Recebe uma lista de IPs em formato JSON e solicita uma análise. O serviço verifica o cache para cada IP:
-- Se a análise for recente, retorna um status `cached`.
-- Se a análise for antiga ou inexistente, executa o fluxo completo de enriquecimento e salva/atualiza o resultado no banco de dados, retornando um status `analyzed`.
-- **Método:** `POST`
-- **Corpo da Requisição:** `{"ips": ["ip1", "ip2", ...]}`
-- **Resposta de Sucesso (200):** Um sumário em JSON com o status da análise para cada IP.
+Este projeto demonstra um conjunto de habilidades essenciais em **DevSecOps e Engenharia de Back-end**:
+- **Containerização com Docker:** Criação de um `Dockerfile` para empacotar e implantar a aplicação de forma eficiente.
+- **Desenvolvimento de APIs RESTful:** Construção de um serviço web com Flask, seguindo as melhores práticas de endpoints.
+- **Arquitetura de Microsserviços:** Separação da lógica de negócio da camada de API para maior modularidade.
+- **Gerenciamento de Banco de Dados:** Uso de SQLite para persistência de dados e atualizações inteligentes.
+- **Lógica de Cache:** Implementação de um cache baseado em tempo para otimização de recursos.
 
 ---
 
-## ⚙️ Como Executar o Serviço Localmente
+## 🚀 Como Executar com Docker (Método Recomendado)
+
+A maneira mais fácil e recomendada de executar este serviço é através do Docker.
 
 ### 1. Pré-requisitos
-- Python 3.10 ou superior
-- Git
-- Nmap (`sudo apt install nmap`)
+- Docker Engine instalado e em execução.
 
-### 2. Instalação
-Clone o repositório e prepare o ambiente:
+### 2. Construa a Imagem Docker
+Clone o repositório e navegue até a pasta do projeto. Em seguida, use o comando `docker build` para construir a imagem a partir do `Dockerfile`.
 
 ```bash
 # Clone o repositório
 git clone https://github.com/arnaldo211/soar-copilot-prototype.git
 cd soar-copilot-prototype
 
-# Mude para o branch da API
+# Mude para o branch correto
 git checkout free-api-version
 
-# Crie e ative o ambiente virtual
-python3 -m venv venv
-source venv/bin/activate
-
-# Instale as dependências
-pip install -r requirements.txt
+# Construa a imagem Docker
+docker build -t ip-intelligence-service .
 ```
 
-### 3. Configuração (Opcional)
-Para a análise de reputação, crie um arquivo `.env` e adicione sua chave da AbuseIPDB:
-
-```text
-ABUSEIPDB_API_KEY="SUA_CHAVE_DO_ABUSEIPDB_AQUI"
-```
-
-### 4. Inicie o Servidor da API
-Execute o arquivo `api.py`. O servidor ficará ativo, esperando por requisições.
+### 3. Execute o Contêiner
+Após a construção da imagem, inicie o contêiner. O comando abaixo mapeia a porta 5000 e executa o contêiner em segundo plano.
 
 ```bash
-python3 api.py
+docker run -d -p 5000:5000 --name ip-api-container ip-intelligence-service
 ```
 
-O servidor estará rodando em `http://127.0.0.1:5000`.
+Sua API agora está rodando dentro de um contêiner em `http://127.0.0.1:5000`.
 
-### 5. Interaja com a API (Exemplos com `curl`)
-Abra um novo terminal para enviar requisições para o seu servidor.
+### 4. Interaja com a API
+Use `curl` ou qualquer outro cliente de API para interagir com o serviço.
 
-Consultar um IP no banco de dados:
+**Consultar um IP no banco de dados:**
 
 ```bash
 curl http://127.0.0.1:5000/query/8.8.8.8
 ```
 
-Solicitar a análise de um ou mais IPs:
+**Solicitar a análise de novos IPs:**
 
 ```bash
 curl -X POST \
@@ -97,9 +68,38 @@ curl -X POST \
   http://127.0.0.1:5000/analyze
 ```
 
+### 5. Gerenciando o Contêiner
+
+```bash
+# Ver os logs da API em tempo real
+docker logs -f ip-api-container
+
+# Parar o contêiner
+docker stop ip-api-container
+
+# Remover o contêiner (após pará-lo)
+docker rm ip-api-container
+```
+
+---
+
+## ⚙️ Arquitetura da API
+
+### `GET /query/<ip>`
+- **Descrição:** Busca um IP no banco de dados e retorna o último relatório conhecido.
+- **Resposta de Sucesso (200):** Objeto JSON com os dados do IP.
+- **Resposta de Falha (404):** Erro JSON se o IP não for encontrado.
+
+### `POST /analyze`
+- **Descrição:** Solicita a análise de uma lista de IPs. Verifica o cache antes de realizar uma nova análise completa.
+- **Corpo da Requisição:** `{"ips": ["ip1", "ip2", ...]}`
+- **Resposta de Sucesso (200):** Sumário em JSON com o status (`cached` ou `analyzed`) para cada IP.
+
+---
+
 ## 🔮 Próximos Passos
-- **"Dockerizar" a Aplicação:** Criar um `Dockerfile` para empacotar a API, o banco de dados e todas as suas dependências em um contêiner Docker, tornando-a 100% portátil.
+- **Orquestração com Docker Compose:** Criar um arquivo `docker-compose.yml` para gerenciar múltiplos serviços (ex: a API e um banco de dados PostgreSQL) de forma declarativa.
 - **Criar um Cliente Web Simples:** Desenvolver uma página HTML com JavaScript que consuma esta API para fornecer uma interface gráfica ao usuário.
-- **Adicionar Autenticação:** Implementar um sistema simples de chave de API para proteger os endpoints e controlar o acesso.
-- 
-**`Docs: Atualiza README para a Versão 6.0 (API com Flask )`**
+- **Adicionar Autenticação:** Implementar um sistema simples de chave de API para proteger os endpoints.
+
+- **`Docs: Atualiza README para a Versão 7.0 (Docker)`**
