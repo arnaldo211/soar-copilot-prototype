@@ -101,3 +101,5 @@ curl -X POST \
 - **"Dockerizar" a Aplicação:** Criar um `Dockerfile` para empacotar a API, o banco de dados e todas as suas dependências em um contêiner Docker, tornando-a 100% portátil.
 - **Criar um Cliente Web Simples:** Desenvolver uma página HTML com JavaScript que consuma esta API para fornecer uma interface gráfica ao usuário.
 - **Adicionar Autenticação:** Implementar um sistema simples de chave de API para proteger os endpoints e controlar o acesso.
+- 
+**`Docs: Atualiza README para a Versão 6.0 (API com Flask )`**
