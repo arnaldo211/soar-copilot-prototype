@@ -1,33 +1,37 @@
-# IP Intelligence Service API (Dockerized)
+# IP Intelligence Dashboard & API Service
 
-![Docker Banner](https://i.imgur.com/e3sYn0Y.png)
+![Dashboard Banner](https://i.imgur.com/e3sYn0Y.png)
 
 ## 📖 Visão Geral
 
-O **IP Intelligence Service** é um microsserviço de API RESTful, desenvolvido em Python com Flask e **containerizado com Docker**. O projeto foi projetado para automatizar a coleta de informações de *Threat Intelligence* de forma portátil, confiável e escalável.
+O **IP Intelligence Dashboard** é uma aplicação web Full-Stack projetada para automatizar a coleta e visualização de informações de *Threat Intelligence*. O projeto consiste em um **front-end interativo** e um **back-end de microsserviço**, containerizado com Docker.
 
-O serviço expõe endpoints para consultar e analisar endereços de IP, enriquecendo-os com dados de múltiplas fontes (geolocalização, reputação, DNS, portas abertas) e armazenando os resultados em um banco de dados **SQLite** persistente. A arquitetura inclui um sistema de cache inteligente para otimizar o desempenho.
+O **back-end** é uma API RESTful desenvolvida em Python com Flask. Ele enriquece endereços de IP com dados de múltiplas fontes (geolocalização, reputação, DNS, portas abertas) e armazena os resultados em um banco de dados SQLite persistente, utilizando um sistema de cache inteligente para otimizar o desempenho.
 
-O uso de Docker encapsula toda a aplicação, suas dependências de sistema (como `nmap`) e de Python em um contêiner isolado, garantindo que ela funcione de maneira consistente em qualquer ambiente.
+O **front-end** é uma interface de usuário moderna, construída com HTML, CSS e JavaScript puro, que consome a API do back-end para fornecer uma experiência de análise de IPs rica e interativa diretamente no navegador.
 
-Este projeto demonstra um conjunto de habilidades essenciais em **DevSecOps e Engenharia de Back-end**:
-- **Containerização com Docker:** Criação de um `Dockerfile` para empacotar e implantar a aplicação de forma eficiente.
-- **Desenvolvimento de APIs RESTful:** Construção de um serviço web com Flask, seguindo as melhores práticas de endpoints.
-- **Arquitetura de Microsserviços:** Separação da lógica de negócio da camada de API para maior modularidade.
-- **Gerenciamento de Banco de Dados:** Uso de SQLite para persistência de dados e atualizações inteligentes.
-- **Lógica de Cache:** Implementação de um cache baseado em tempo para otimização de recursos.
+Todo o serviço de back-end é encapsulado em um **contêiner Docker**, garantindo portabilidade, consistência e facilidade de implantação.
+
+Este projeto demonstra um conjunto de habilidades em **Engenharia Full-Stack e DevSecOps**:
+- **Desenvolvimento Front-End:** Criação de uma UI reativa com HTML, CSS e JavaScript (Fetch API, Promises).
+- **Desenvolvimento de Back-End:** Construção de uma API RESTful com Flask e lógica de negócio modular.
+- **Containerização com Docker:** Empacotamento da aplicação e suas dependências para implantação consistente.
+- **Gerenciamento de Banco de Dados:** Uso de SQLite para persistência de dados e cache.
+- **Integração de Sistemas:** Conexão de um front-end a um back-end via requisições HTTP (CORS).
 
 ---
 
-## 🚀 Como Executar com Docker (Método Recomendado)
+## 🚀 Como Executar a Aplicação Completa
 
-A maneira mais fácil e recomendada de executar este serviço é através do Docker.
+A maneira mais fácil de executar o projeto é usando o contêiner Docker para o back-end e abrindo o arquivo do front-end no navegador.
 
 ### 1. Pré-requisitos
 - Docker Engine instalado e em execução.
+- Git.
+- Nmap (para a construção da imagem Docker).
 
-### 2. Construa a Imagem Docker
-Clone o repositório e navegue até a pasta do projeto. Em seguida, use o comando `docker build` para construir a imagem a partir do `Dockerfile`.
+### 2. Inicie o Back-End (API em Contêiner)
+Clone o repositório, navegue até a pasta do projeto e use os comandos do Docker para construir e executar o serviço de API.
 
 ```bash
 # Clone o repositório
@@ -37,69 +41,63 @@ cd soar-copilot-prototype
 # Mude para o branch correto
 git checkout free-api-version
 
-# Construa a imagem Docker
+# Construa a imagem Docker (pode levar alguns minutos na primeira vez)
 docker build -t ip-intelligence-service .
-```
 
-### 3. Execute o Contêiner
-Após a construção da imagem, inicie o contêiner. O comando abaixo mapeia a porta 5000 e executa o contêiner em segundo plano.
-
-```bash
+# Execute o contêiner em segundo plano
 docker run -d -p 5000:5000 --name ip-api-container ip-intelligence-service
 ```
 
-Sua API agora está rodando dentro de um contêiner em `http://127.0.0.1:5000`.
+Neste ponto, seu serviço de back-end está rodando em `http://127.0.0.1:5000`.
 
-### 4. Interaja com a API
-Use `curl` ou qualquer outro cliente de API para interagir com o serviço.
+### 3. Use a Interface Web (Front-End)
+Com o back-end no ar, basta abrir a interface no seu navegador.
+1. Navegue até a pasta `frontend` dentro do diretório do projeto.
+2. Dê um clique duplo no arquivo `index.html`.
 
-**Consultar um IP no banco de dados:**
+A página "IP Intelligence Dashboard" será aberta. Agora você pode usar os botões "Consultar do Banco" e "Analisar IPs" para interagir com a sua API.
 
-```bash
-curl http://127.0.0.1:5000/query/8.8.8.8
-```
-
-**Solicitar a análise de novos IPs:**
-
-```bash
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"ips": ["8.8.4.4", "1.1.1.1"]}' \
-  http://127.0.0.1:5000/analyze
-```
-
-### 5. Gerenciando o Contêiner
+### 4. Gerenciando o Contêiner
 
 ```bash
 # Ver os logs da API em tempo real
 docker logs -f ip-api-container
 
-# Parar o contêiner
+# Parar o contêiner quando terminar
 docker stop ip-api-container
 
-# Remover o contêiner (após pará-lo)
+# Remover o contêiner (opcional, após pará-lo)
 docker rm ip-api-container
 ```
 
 ---
 
-## ⚙️ Arquitetura da API
+## ⚙️ Detalhes da Arquitetura da API
+
+Para usuários avançados, a API pode ser consumida diretamente:
 
 ### `GET /query/<ip>`
 - **Descrição:** Busca um IP no banco de dados e retorna o último relatório conhecido.
 - **Resposta de Sucesso (200):** Objeto JSON com os dados do IP.
-- **Resposta de Falha (404):** Erro JSON se o IP não for encontrado.
 
 ### `POST /analyze`
-- **Descrição:** Solicita a análise de uma lista de IPs. Verifica o cache antes de realizar uma nova análise completa.
+- **Descrição:** Solicita a análise de uma lista de IPs, utilizando o cache para otimização.
 - **Corpo da Requisição:** `{"ips": ["ip1", "ip2", ...]}`
-- **Resposta de Sucesso (200):** Sumário em JSON com o status (`cached` ou `analyzed`) para cada IP.
+- **Exemplo de uso com curl:**
+
+```bash
+# Consultar um IP
+curl http://127.0.0.1:5000/query/8.8.8.8
+
+# Analisar múltiplos IPs
+curl -X POST -H "Content-Type: application/json" -d '{"ips": ["8.8.4.4", "1.1.1.1"]}' http://127.0.0.1:5000/analyze
+```
 
 ---
 
 ## 🔮 Próximos Passos
-- **Orquestração com Docker Compose:** Criar um arquivo `docker-compose.yml` para gerenciar múltiplos serviços (ex: a API e um banco de dados PostgreSQL) de forma declarativa.
-- **Criar um Cliente Web Simples:** Desenvolver uma página HTML com JavaScript que consuma esta API para fornecer uma interface gráfica ao usuário.
-- **Adicionar Autenticação:** Implementar um sistema simples de chave de API para proteger os endpoints.
+- **Orquestração com Docker Compose:** Criar um `docker-compose.yml` para gerenciar múltiplos serviços.
+- **Adicionar Autenticação:** Implementar um sistema de chave de API para proteger os endpoints.
+- **Melhorar a UI:** Adicionar funcionalidades como ordenação de tabelas, filtros e exportação de dados diretamente da interface.
 
-- **`Docs: Atualiza README para a Versão 7.0 (Docker)`**
+- **`Docs: Atualiza README para a Versão 8.0 (Full-Stack )`**
