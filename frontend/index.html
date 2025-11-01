@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Intelligence Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>IP Intelligence Dashboard</h1>
+            <p>Uma interface para o serviço de análise de IPs.</p>
+        </header>
+
+        <main>
+            <div class="input-section">
+                <textarea id="ip-input" placeholder="Digite um ou mais IPs, um por linha..."></textarea>
+                <div class="buttons">
+                    <button id="query-btn">Consultar do Banco</button>
+                    <button id="analyze-btn">Analisar IPs</button>
+                </div>
+            </div>
+
+            <div id="loading-spinner" class="hidden"></div>
+
+            <div class="results-section">
+                <h2>Resultados</h2>
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>IP</th>
+                            <th>Hostname</th>
+                            <th>País</th>
+                            <th>Cidade</th>
+                            <th>Portas Abertas</th>
+                            <th>Score Abuso (%)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body">
+                        <!-- Os resultados serão inseridos aqui pelo JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

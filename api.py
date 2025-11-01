@@ -1,3 +1,7 @@
+from flask import Flask, jsonify, request
+from flask_cors import CORS # <-- ADICIONE ESTA LINHA
+import logic
+
 # api.py
 from flask import Flask, jsonify, request
 # Importa as funções do nosso outro arquivo
@@ -5,6 +9,7 @@ import logic
 
 # Cria a aplicação Flask
 app = Flask(__name__)
+CORS(app)
 
 # Garante que o banco de dados exista ao iniciar a API
 logic.initialize_database()
