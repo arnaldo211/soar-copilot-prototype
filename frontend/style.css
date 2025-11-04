@@ -99,3 +99,24 @@ tbody tr:nth-child(odd) { background-color: #2c2c2c; }
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Estilos para o botão de exportação e cabeçalhos ordenáveis */
+#export-csv-btn {
+    background-color: #1e88e5; /* Um azul bonito */
+    color: white;
+    float: right; /* Alinha o botão à direita */
+    margin-bottom: 10px;
+}
+
+#export-csv-btn:hover {
+    background-color: #1565c0;
+}
+
+#results-table thead th {
+    cursor: pointer; /* Muda o cursor para indicar que é clicável */
+    user-select: none; /* Impede que o texto seja selecionado ao clicar */
+}
+
+#results-table thead th:hover {
+    background-color: #4a4a4a;
+}
