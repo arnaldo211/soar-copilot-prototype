@@ -1,6 +1,6 @@
-// app.js - VERSÃO FINAL E CORRIGIDA
+// app.js - VERSÃO 10.0 (com Autenticação)
 document.addEventListener('DOMContentLoaded', () => {
-    // --- 1. Seleção dos Elementos do HTML ---
+    // --- 1. Seleção dos Elementos e Configurações ---
     const queryBtn = document.getElementById('query-btn');
     const analyzeBtn = document.getElementById('analyze-btn');
     const ipInput = document.getElementById('ip-input');
@@ -8,24 +8,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingSpinner = document.getElementById('loading-spinner');
 
     const API_BASE_URL = 'http://127.0.0.1:5000';
+    // Chave secreta para autenticar com a API.
+    const API_SECRET_KEY = 'secret-key-for-ip-intel-api-12345-xyz';
 
     // --- 2. Funções Auxiliares ---
 
-    // Função para mostrar/esconder o spinner de carregamento
     const showLoading = (isLoading ) => {
         loadingSpinner.classList.toggle('hidden', !isLoading);
     };
 
-    // Função para adicionar uma linha de resultado na tabela
     const addRowToTable = (data, status = 'Consultado') => {
         const row = document.createElement('tr');
-        
         let statusClass = '';
         if (status.includes('cached')) statusClass = 'status-cached';
         if (status.includes('analyzed')) statusClass = 'status-analyzed';
-        if (status.includes('error')) statusClass = 'status-error';
+        if (status.includes('error') || status.includes('Unauthorized')) statusClass = 'status-error';
 
-        // Função auxiliar para verificar se um valor existe (incluindo 0)
         const getValue = (value) => (value !== null && value !== undefined) ? value : 'N/A';
 
         row.innerHTML = `
@@ -43,54 +41,46 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 3. Event Listeners dos Botões ---
 
     // Evento do botão "Consultar do Banco"
-	// NOVA VERSÃO APRIMORADA do Evento do botão "Consultar do Banco"
-queryBtn.addEventListener('click', async () => {
-    const ips = ipInput.value.trim().split('\n').filter(ip => ip); // Pega TODOS os IPs
-    if (ips.length === 0) {
-        alert('Por favor, insira pelo menos um endereço de IP para consultar.');
-        return;
-    }
+    queryBtn.addEventListener('click', async () => {
+        const ips = ipInput.value.trim().split('\n').filter(ip => ip);
+        if (ips.length === 0) {
+            alert('Por favor, insira pelo menos um endereço de IP para consultar.');
+            return;
+        }
 
-    resultsBody.innerHTML = ''; // Limpa a tabela
-    showLoading(true);
+        resultsBody.innerHTML = '';
+        showLoading(true);
 
-    try {
-        // Prepara uma lista de "promessas" para buscar cada IP no banco
-        const queryPromises = ips.map(ip => {
-            return fetch(`${API_BASE_URL}/query/${ip}`)
+        try {
+            const queryPromises = ips.map(ip => {
+                return fetch(`${API_BASE_URL}/query/${ip}`, {
+                    headers: { 'X-API-Key': API_SECRET_KEY } // <-- AUTENTICAÇÃO
+                })
                 .then(response => {
                     if (!response.ok) {
-                        // Se a API retornar um erro (ex: 404 Not Found),
-                        // criamos um objeto de erro para exibir na tabela.
                         return response.json().then(err => ({ ip: ip, error: err.error }));
                     }
                     return response.json();
                 })
-                .catch(networkError => {
-                    // Se houver um erro de rede, também criamos um objeto de erro.
-                    return { ip: ip, error: networkError.message };
-                });
-        });
+                .catch(networkError => ({ ip: ip, error: networkError.message }));
+            });
 
-        // Executa todas as consultas em paralelo e espera por todas
-        const results = await Promise.all(queryPromises);
+            const results = await Promise.all(queryPromises);
 
-        // Agora que temos todos os resultados, preenchemos a tabela
-        results.forEach(result => {
-            if (result.error) {
-                addRowToTable({ ip: result.ip }, `Erro: ${result.error}`);
-            } else {
-                addRowToTable(result); // O status padrão 'Consultado' será usado
-            }
-        });
+            results.forEach(result => {
+                if (result.error) {
+                    addRowToTable({ ip: result.ip }, `Erro: ${result.error}`);
+                } else {
+                    addRowToTable(result);
+                }
+            });
 
-    } catch (error) {
-        // Este catch é para erros inesperados no Promise.all
-        alert(`Ocorreu um erro inesperado: ${error.message}`);
-    } finally {
-        showLoading(false);
-    }
-});
+        } catch (error) {
+            alert(`Ocorreu um erro inesperado: ${error.message}`);
+        } finally {
+            showLoading(false);
+        }
+    });
 
     // Evento do botão "Analisar IPs"
     analyzeBtn.addEventListener('click', async () => {
@@ -106,7 +96,10 @@ queryBtn.addEventListener('click', async () => {
         try {
             const analyzeResponse = await fetch(`${API_BASE_URL}/analyze`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': API_SECRET_KEY // <-- AUTENTICAÇÃO
+                },
                 body: JSON.stringify({ ips: ips })
             });
             const analyzeData = await analyzeResponse.json();
@@ -116,7 +109,9 @@ queryBtn.addEventListener('click', async () => {
             }
 
             const detailPromises = analyzeData.analysis_summary.map(summary => {
-                return fetch(`${API_BASE_URL}/query/${summary.ip}`).then(res => res.json());
+                return fetch(`${API_BASE_URL}/query/${summary.ip}`, {
+                    headers: { 'X-API-Key': API_SECRET_KEY } // <-- AUTENTICAÇÃO
+                }).then(res => res.json());
             });
 
             const detailedReports = await Promise.all(detailPromises);

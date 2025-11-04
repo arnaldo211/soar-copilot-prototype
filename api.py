@@ -1,6 +1,27 @@
+# api.py
+import os
+from functools import wraps
 from flask import Flask, jsonify, request
-from flask_cors import CORS # <-- ADICIONE ESTA LINHA
+from flask_cors import CORS
+from dotenv import load_dotenv
 import logic
+
+load_dotenv() # Carrega as variáveis do .env
+
+API_KEY = os.environ.get("API_SECRET_KEY")
+
+# Decorador para proteger os endpoints
+def require_api_key(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Verifica se a chave foi enviada no cabeçalho 'X-API-Key'
+        provided_key = request.headers.get('X-API-Key')
+        if not API_KEY or provided_key != API_KEY:
+            # Se a chave estiver errada ou não for fornecida, retorna erro 401
+            return jsonify({"error": "Acesso não autorizado. Chave de API inválida ou ausente."}), 401
+        # Se a chave estiver correta, executa a função do endpoint
+        return f(*args, **kwargs)
+    return decorated_function
 
 # api.py
 from flask import Flask, jsonify, request
@@ -17,11 +38,13 @@ logic.initialize_database()
 # --- DEFINIÇÃO DOS ENDPOINTS DA API ---
 
 @app.route('/')
+@require_api_key
 def index():
     """Endpoint principal para verificar se a API está no ar."""
     return "<h1>IP Intelligence Service v6.0</h1><p>API está online. Use os endpoints /query/&lt;ip&gt; ou /analyze.</p>"
 
 @app.route('/query/<string:ip>', methods=['GET'])
+@require_api_key
 def query_ip(ip):
     """Endpoint para buscar um IP no banco de dados. Ex: /query/8.8.8.8"""
     print(f"INFO: Recebida requisição GET para /query/{ip}")
@@ -36,6 +59,7 @@ def query_ip(ip):
         return jsonify({"error": "IP não encontrado no banco de dados"}), 404
 
 @app.route('/analyze', methods=['POST'])
+@require_api_key
 def analyze_ips():
     """Endpoint para solicitar a análise de um ou mais IPs."""
     print("INFO: Recebida requisição POST para /analyze")
