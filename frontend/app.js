@@ -1,4 +1,4 @@
-// app.js - VERSÃO 11.0 (com Exportação e Ordenação)
+// app.js - VERSÃO 13.0 (FINAL E CORRIGIDA)
 document.addEventListener('DOMContentLoaded', () => {
     // --- 1. Seleção dos Elementos e Configurações ---
     const queryBtn = document.getElementById('query-btn');
@@ -8,11 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsTable = document.getElementById('results-table');
     const resultsBody = document.getElementById('results-body');
     const loadingSpinner = document.getElementById('loading-spinner');
+    const internalModeCheckbox = document.getElementById('internal-mode-checkbox');
 
     const API_BASE_URL = 'http://127.0.0.1:5000';
     const API_SECRET_KEY = 'secret-key-for-ip-intel-api-12345-xyz';
 
-    // Variável para armazenar os dados atuais da tabela
     let currentTableData = [];
 
     // --- 2. Funções Auxiliares ---
@@ -21,35 +21,61 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingSpinner.classList.toggle('hidden', !isLoading);
     };
 
-    // Função para renderizar a tabela com base nos dados atuais
-    const renderTable = (data) => {
-        resultsBody.innerHTML = ''; // Limpa a tabela antes de renderizar
-        currentTableData = data; // Armazena os dados atuais
+    const renderTable = (data, isInternal = false) => {
+        resultsBody.innerHTML = '';
+        currentTableData = data;
+        exportCsvBtn.classList.toggle('hidden', data.length === 0);
 
-        if (data.length > 0) {
-            exportCsvBtn.classList.remove('hidden'); // Mostra o botão de exportar
+        const headers = resultsTable.querySelector('thead tr');
+        if (isInternal) {
+            headers.innerHTML = `
+                <th data-column="ip">IP</th>
+                <th data-column="open_ports_details">Portas e Serviços</th>
+                <th data-column="security_recommendations">Recomendações</th>
+                <th data-column="status">Status</th>
+            `;
         } else {
-            exportCsvBtn.classList.add('hidden'); // Esconde se não houver dados
+            headers.innerHTML = `
+                <th data-column="ip">IP</th>
+                <th data-column="hostname">Hostname</th>
+                <th data-column="country">País</th>
+                <th data-column="city">Cidade</th>
+                <th data-column="open_ports">Portas Abertas</th>
+                <th data-column="abuse_score">Score Abuso (%)</th>
+                <th data-column="status">Status</th>
+            `;
         }
 
         data.forEach(item => {
             const row = document.createElement('tr');
             let statusClass = '';
-            if (item.status.includes('cached')) statusClass = 'status-cached';
-            if (item.status.includes('analyzed')) statusClass = 'status-analyzed';
-            if (item.status.includes('error') || item.status.includes('Unauthorized')) statusClass = 'status-error';
+            if (item.status?.includes('cached')) statusClass = 'status-cached';
+            if (item.status?.includes('analyzed')) statusClass = 'status-analyzed';
+            if (item.status?.includes('error') || item.status?.includes('Unauthorized')) statusClass = 'status-error';
 
             const getValue = (value) => (value !== null && value !== undefined) ? value : 'N/A';
 
-            row.innerHTML = `
-                <td>${getValue(item.ip)}</td>
-                <td>${getValue(item.hostname)}</td>
-                <td>${getValue(item.country)}</td>
-                <td>${getValue(item.city)}</td>
-                <td>${getValue(item.open_ports)}</td>
-                <td>${getValue(item.abuse_score)}</td>
-                <td class="${statusClass}">${getValue(item.status)}</td>
-            `;
+            if (isInternal) {
+                // AQUI ESTÁ A CORREÇÃO FINAL E SIMPLIFICADA
+                const recommendationsText = Array.isArray(item.security_recommendations) ? item.security_recommendations.map(r => `[${r.risk}] ${r.details}`).join('; ') : getValue(item.security_recommendations);
+
+                row.innerHTML = `
+                    <td>${getValue(item.ip)}</td>
+                    <td>${getValue(item.open_ports_details)}</td>
+                    <td>${recommendationsText}</td>
+                    <td class="${statusClass}">${getValue(item.status)}</td>
+                `;
+            } else {
+                row.innerHTML = `
+                    <td>${getValue(item.ip)}</td>
+                    <td>${getValue(item.hostname)}</td>
+                    <td>${getValue(item.country)}</td>
+                    <td>${getValue(item.city)}</td>
+                    <td>${getValue(item.open_ports)}</td>
+                    <td>${getValue(item.abuse_score)}</td>
+                    <td class="${statusClass}">${getValue(item.status)}</td>
+                `;
+            }
             resultsBody.appendChild(row);
         });
     };
@@ -70,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .catch(err => ({ ip, status: `Erro: ${err.message}` }))
             );
             const results = await Promise.all(queryPromises);
-            renderTable(results.map(r => ({ ...r, status: r.status || 'Consultado' })));
+            renderTable(results.map(r => ({ ...r, status: r.status || 'Consultado' })), false);
         } catch (error) {
             alert(`Ocorreu um erro inesperado: ${error.message}`);
         } finally {
@@ -86,20 +112,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         showLoading(true);
         try {
-            const analyzeResponse = await fetch(`${API_BASE_URL}/analyze`, {
+            const isInternalMode = internalModeCheckbox.checked;
+            const endpoint = isInternalMode ? `${API_BASE_URL}/analyze/internal` : `${API_BASE_URL}/analyze`;
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-API-Key': API_SECRET_KEY },
                 body: JSON.stringify({ ips })
             });
-            const analyzeData = await analyzeResponse.json();
-            if (!analyzeResponse.ok) throw new Error(analyzeData.error || 'Erro na análise');
+            const data = await response.json();
 
-            const detailPromises = analyzeData.analysis_summary.map(summary =>
-                fetch(`${API_BASE_URL}/query/${summary.ip}`, { headers: { 'X-API-Key': API_SECRET_KEY } })
-                .then(res => res.json().then(data => ({ ...data, status: summary.status })))
-            );
-            const detailedReports = await Promise.all(detailPromises);
-            renderTable(detailedReports);
+            if (!response.ok) {
+                throw new Error(data.error || 'Erro desconhecido na análise');
+            }
+
+            if (isInternalMode) {
+                renderTable(data.map(item => ({ ...item, status: item.status || 'Analisado (Interno)' })), true);
+            } else {
+                const detailPromises = data.analysis_summary.map(summary =>
+                    fetch(`${API_BASE_URL}/query/${summary.ip}`, { headers: { 'X-API-Key': API_SECRET_KEY } })
+                    .then(res => res.json().then(details => ({ ...details, status: summary.status })))
+                );
+                const detailedReports = await Promise.all(detailPromises);
+                renderTable(detailedReports, false);
+            }
         } catch (error) {
             alert(`Erro no processo de análise: ${error.message}`);
         } finally {
@@ -107,21 +143,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // **NOVA FUNCIONALIDADE: Exportar para CSV**
     exportCsvBtn.addEventListener('click', () => {
         if (currentTableData.length === 0) return;
-
-        const headers = Object.keys(currentTableData[0]);
-        const csvRows = [headers.join(',')]; // Cabeçalho do CSV
-
+        const headers = Array.from(resultsTable.querySelectorAll('thead th')).map(th => th.dataset.column);
+        const csvRows = [headers.join(',')];
         currentTableData.forEach(item => {
-            const values = headers.map(header => {
-                const escaped = ('' + (item[header] ?? '')).replace(/"/g, '""'); // Escapa aspas
+            const row = headers.map(header => {
+                let value = item[header];
+                if (header === 'security_recommendations' && Array.isArray(value)) {
+                    value = value.map(r => `[${r.risk}] ${r.details}`).join('; ');
+                }
+                const escaped = ('' + (value ?? '')).replace(/"/g, '""');
                 return `"${escaped}"`;
             });
-            csvRows.push(values.join(','));
+            csvRows.push(row.join(','));
         });
-
         const csvString = csvRows.join('\n');
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -134,26 +170,20 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(link);
     });
 
-    // **NOVA FUNCIONALIDADE: Ordenação da Tabela**
-    resultsTable.querySelectorAll('thead th').forEach(headerCell => {
-        let sortOrder = 'asc'; // 'asc' ou 'desc'
-        headerCell.addEventListener('click', () => {
-            const columnKey = headerCell.dataset.column;
-            if (!columnKey) return;
-
-            // Alterna a ordem de classificação
-            sortOrder = (sortOrder === 'asc') ? 'desc' : 'asc';
-
-            const sortedData = [...currentTableData].sort((a, b) => {
-                const valA = a[columnKey] ?? '';
-                const valB = b[columnKey] ?? '';
-
-                if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-                if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-                return 0;
-            });
-            renderTable(sortedData);
+    resultsTable.querySelector('thead').addEventListener('click', (e) => {
+        if (e.target.tagName !== 'TH') return;
+        const headerCell = e.target;
+        const columnKey = headerCell.dataset.column;
+        if (!columnKey) return;
+        const sortOrder = headerCell.dataset.sortOrder = headerCell.dataset.sortOrder === 'asc' ? 'desc' : 'asc';
+        const sortedData = [...currentTableData].sort((a, b) => {
+            const valA = a[columnKey] ?? '';
+            const valB = b[columnKey] ?? '';
+            if (Array.isArray(valA)) return 0;
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
         });
+        renderTable(sortedData, internalModeCheckbox.checked);
     });
-
-}); // Fim do document.addEventListener
+});
