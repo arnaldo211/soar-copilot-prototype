@@ -1,91 +1,103 @@
-# IP Intelligence Service API (Orquestrado com Docker Compose)
+# IP Intelligence System: Ferramenta Full-Stack de Análise de Segurança
 
-![Docker Banner](https://i.imgur.com/e3sYn0Y.png)
+![Cybersecurity AI Banner](https://i.imgur.com/Q3fG4aA.png)
 
 ## 📖 Visão Geral
 
-O **IP Intelligence Service** é um microsserviço de API RESTful, projetado para automatizar a coleta de informações de *Threat Intelligence*. A aplicação é orquestrada com **Docker Compose**, permitindo que todo o ambiente (serviço de API, dependências e configurações de rede) seja gerenciado com um único comando.
+O **IP Intelligence System** é uma aplicação full-stack de cibersegurança com foco em Blue Team, projetada para automatizar a coleta e análise de informações sobre endereços de IP. O projeto evoluiu de um simples script para um sistema completo, demonstrando um ciclo de desenvolvimento de software moderno, desde a linha de comando até uma API em contêiner com uma interface web interativa.
 
-O projeto é composto por:
-- **Back-End:** Uma API em Python/Flask que enriquece IPs com dados de múltiplas fontes (geolocalização, reputação, DNS, portas abertas) e os armazena em um banco de dados SQLite.
-- **Front-End:** Uma interface web interativa (HTML/CSS/JS) que consome a API, permitindo que os usuários analisem e consultem IPs diretamente do navegador.
+Este projeto demonstra um amplo conjunto de habilidades, incluindo:
 
-A arquitetura utiliza Docker para containerização e Docker Compose para orquestração, garantindo um ambiente de desenvolvimento e implantação que é **simples, portátil e consistente**.
-
-Este projeto demonstra habilidades em **Engenharia de Software e DevOps**:
-- **Orquestração de Contêineres:** Uso de `docker-compose.yml` para definir e gerenciar uma aplicação multi-serviço.
-- **Desenvolvimento Full-Stack:** Conexão de uma UI de front-end a uma API de back-end.
-- **Arquitetura de Microsserviços:** Separação da lógica de negócio da camada de API.
-- **Gerenciamento de Dados:** Persistência de dados com SQLite e volumes Docker.
+- **Desenvolvimento Back-End:** Criação de uma API RESTful robusta com Flask.
+- **Desenvolvimento Front-End:** Construção de uma interface de usuário reativa com HTML, CSS e JavaScript puro.
+- **Automação de Segurança:** Orquestração de ferramentas como Nmap e integração com APIs de Threat Intelligence (AbuseIPDB).
+- **Gerenciamento de Dados:** Persistência de dados com um banco de dados SQLite e implementação de um sistema de cache inteligente.
+- **DevOps:** Containerização da aplicação com Docker e orquestração de serviços com Docker Compose.
+- **Arquitetura de Software:** Refatoração de código para uma arquitetura modular e centralizada (`logic.py`).
 
 ---
 
-## 🚀 Como Executar a Aplicação (com Docker Compose)
+## ⚙️ Arquitetura e Funcionalidades
 
-Com Docker e Docker Compose instalados, iniciar toda a aplicação se resume a um único comando.
+O sistema é composto por três componentes principais que trabalham juntos:
+
+1.  **`IP Intelligence API` (Back-End):** O coração do sistema. Uma API Flask que expõe endpoints seguros para consultar o banco de dados, solicitar análises externas (Geolocalização, AbuseIPDB, etc.) e análises de segurança internas (scan de portas com Nmap).
+2.  **`IP Intelligence Dashboard` (Front-End):** Uma interface web que consome a API, permitindo que o analista realize análises de forma interativa, visualize os resultados em uma tabela dinâmica, ordene os dados e exporte para CSV.
+3.  **`ip-intel-cli` (Linha de Comando):** A ferramenta original, que permite a automação de análises via terminal, ideal para scripting e integração com outros processos.
+
+---
+
+## 🚀 Como Executar (Método Recomendado: Docker Compose)
+
+A forma mais simples e recomendada de executar a aplicação completa (API + Banco de Dados) é usando o Docker e o Docker Compose.
 
 ### 1. Pré-requisitos
-- Docker Engine e Docker Compose Plugin instalados.
-- Git.
+- [Docker](https://docs.docker.com/get-docker/) e Docker Compose
+- Git
 
-### 2. Clone e Inicie o Serviço
-Clone o repositório, navegue até a pasta do projeto e use o comando `docker compose up`.
+### 2. Instalação
+Primeiro, clone o repositório e navegue para o branch correto:
 
 ```bash
-# 1. Clone o repositório
 git clone https://github.com/arnaldo211/soar-copilot-prototype.git
 cd soar-copilot-prototype
-
-# 2. Mude para o branch correto
 git checkout free-api-version
-
-# 3. Inicie toda a aplicação em segundo plano
-docker compose up -d
 ```
 
-Na primeira vez, o Compose construirá a imagem Docker, o que pode levar alguns minutos. Nas vezes seguintes, será quase instantâneo.
-Sua API de back-end está agora rodando e acessível em `http://127.0.0.1:5000`.
+### 3. Configuração
+Crie um arquivo chamado `.env` na raiz do projeto para armazenar as chaves de API. A chave `API_SECRET_KEY` é para proteger sua própria API, e a `ABUSEIPDB_KEY` é para o serviço externo.
 
-### 3. Use a Interface Web
-Com o back-end no ar, abra a interface no seu navegador:
-1. Navegue até a pasta `frontend` dentro do diretório do projeto.
-2. Dê um clique duplo no arquivo `index.html`.
+```env
+# Chave para proteger sua API. Pode ser qualquer string segura.
+API_SECRET_KEY="secret-key-for-ip-intel-api-12345-xyz"
 
-A página "IP Intelligence Dashboard" será aberta, pronta para uso.
+# Chave opcional para o serviço AbuseIPDB
+ABUSEIPDB_KEY="SUA_CHAVE_DO_ABUSEIPDB_AQUI"
+```
 
-### 4. Gerenciando a Aplicação com Compose
+### 4. Execução com Docker Compose
+Com o Docker em execução na sua máquina, suba os serviços com um único comando:
 
 ```bash
-# Ver o status dos seus serviços
-docker compose ps
+docker compose up -d --build
+```
 
-# Ver os logs da API em tempo real
-docker compose logs -f
+O comando irá construir a imagem da sua API e iniciar o contêiner em segundo plano (`-d`).
+O banco de dados `ip_intelligence.db` será criado e persistido na pasta do projeto.
 
-# Parar e remover os contêineres da aplicação
+### 5. Acessando a Aplicação
+- **Interface Web (Dashboard):** Abra o arquivo `frontend/index.html` diretamente no seu navegador. A interface se conectará automaticamente à API que está rodando no Docker.
+- **API:** A API estará disponível em `http://127.0.0.1:5000`. Você pode testar os endpoints com ferramentas como `curl` ou Postman.
+
+### 6. Parando a Aplicação
+Para parar os serviços, execute na pasta do projeto:
+
+```bash
 docker compose down
 ```
 
 ---
 
-## ⚙️ Detalhes da Arquitetura
+## 🔧 Uso da Ferramenta de Linha de Comando (`main.py`)
 
-### `docker-compose.yml`
-- **`services.ip-intelligence-api`:** Define o nosso serviço principal.
-- **`build: .`:** Instrui o Compose a construir a imagem a partir do `Dockerfile` local.
-- **`ports: - "5000:5000"`:** Mapeia a porta do host para a porta do contêiner.
-- **`volumes: - ./ip_intelligence.db:/app/ip_intelligence.db`:** Garante que o banco de dados seja persistido no seu computador, sobrevivendo a recriações do contêiner.
+A ferramenta de linha de comando ainda é funcional e pode ser usada para automação.
 
-### API Endpoints
-- **`GET /query/<ip>`:** Consulta um IP no banco de dados.
-- **`POST /analyze`:** Analisa uma lista de IPs, utilizando o cache.
-- **Corpo da Requisição:** `{"ips": ["ip1", "ip2", ...]}`
+**Ative o Ambiente Virtual:**
 
----
+```bash
+source venv/bin/activate
+```
 
-## 🔮 Próximos Passos
-- **Adicionar Autenticação:** Implementar um sistema de chave de API para proteger os endpoints.
-- **Melhorar a UI:** Adicionar funcionalidades como ordenação de tabelas, filtros e exportação de dados.
-- **Migrar para um Banco de Dados mais Robusto:** Usar o Docker Compose para adicionar um serviço de PostgreSQL e adaptar a aplicação para usá-lo.
+**Execute com os Argumentos:**
 
-- **`Docs: Atualiza README para a Versão 9.0 (Docker Compose )`**
+```bash
+# Analisar um IP externo
+python3 main.py --ip 8.8.8.8
+
+# Consultar um IP no banco de dados
+python3 main.py --query 8.8.8.8
+
+# Fazer uma análise de segurança em um IP interno
+python3 main.py --ip 192.168.1.1 --internal
+```
+**`Docs: Atualiza README para a Versão 13.0 (Full-Stack)`**
