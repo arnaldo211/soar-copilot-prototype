@@ -21,64 +21,66 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingSpinner.classList.toggle('hidden', !isLoading);
     };
 
-    const renderTable = (data, isInternal = false) => {
-        resultsBody.innerHTML = '';
-        currentTableData = data;
-        exportCsvBtn.classList.toggle('hidden', data.length === 0);
+// NOVA VERSÃO da função renderTable em app.js
 
-        const headers = resultsTable.querySelector('thead tr');
+const renderTable = (data, isInternal = false) => {
+    resultsBody.innerHTML = '';
+    currentTableData = data;
+    exportCsvBtn.classList.toggle('hidden', data.length === 0);
+
+    const headers = resultsTable.querySelector('thead tr');
+    if (isInternal) {
+        headers.innerHTML = `
+            <th data-column="ip">IP</th>
+            <th data-column="open_ports_details">Portas e Serviços</th>
+            <th data-column="security_recommendations">Recomendações</th>
+            <th data-column="status">Status</th>
+        `;
+    } else {
+        // Usa os nomes de chave corretos (minúsculos)
+        headers.innerHTML = `
+            <th data-column="ip">IP</th>
+            <th data-column="hostname">Hostname</th>
+            <th data-column="country">País</th>
+            <th data-column="city">Cidade</th>
+            <th data-column="open_ports">Portas Abertas</th>
+            <th data-column="abuse_score">Score Abuso (%)</th>
+            <th data-column="status">Status</th>
+        `;
+    }
+
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        let statusClass = '';
+        if (item.status?.includes('cached')) statusClass = 'status-cached';
+        if (item.status?.includes('analyzed')) statusClass = 'status-analyzed';
+        if (item.status?.includes('error') || item.status?.includes('Unauthorized')) statusClass = 'status-error';
+
+        const getValue = (value) => (value !== null && value !== undefined) ? value : 'N/A';
+
         if (isInternal) {
-            headers.innerHTML = `
-                <th data-column="ip">IP</th>
-                <th data-column="open_ports_details">Portas e Serviços</th>
-                <th data-column="security_recommendations">Recomendações</th>
-                <th data-column="status">Status</th>
+            const recommendationsText = Array.isArray(item.security_recommendations) ? item.security_recommendations.map(r => `[${r.risk}] ${r.details}`).join('; ') : getValue(item.security_recommendations);
+            row.innerHTML = `
+                <td>${getValue(item.ip)}</td>
+                <td>${getValue(item.open_ports_details)}</td>
+                <td>${recommendationsText}</td>
+                <td class="${statusClass}">${getValue(item.status)}</td>
             `;
         } else {
-            headers.innerHTML = `
-                <th data-column="ip">IP</th>
-                <th data-column="hostname">Hostname</th>
-                <th data-column="country">País</th>
-                <th data-column="city">Cidade</th>
-                <th data-column="open_ports">Portas Abertas</th>
-                <th data-column="abuse_score">Score Abuso (%)</th>
-                <th data-column="status">Status</th>
+            // Usa os nomes de chave corretos (minúsculos) para preencher as células
+            row.innerHTML = `
+                <td>${getValue(item.ip)}</td>
+                <td>${getValue(item.hostname)}</td>
+                <td>${getValue(item.country)}</td>
+                <td>${getValue(item.city)}</td>
+                <td>${getValue(item.open_ports)}</td>
+                <td>${getValue(item.abuse_score)}</td>
+                <td class="${statusClass}">${getValue(item.status)}</td>
             `;
         }
-
-        data.forEach(item => {
-            const row = document.createElement('tr');
-            let statusClass = '';
-            if (item.status?.includes('cached')) statusClass = 'status-cached';
-            if (item.status?.includes('analyzed')) statusClass = 'status-analyzed';
-            if (item.status?.includes('error') || item.status?.includes('Unauthorized')) statusClass = 'status-error';
-
-            const getValue = (value) => (value !== null && value !== undefined) ? value : 'N/A';
-
-            if (isInternal) {
-                // AQUI ESTÁ A CORREÇÃO FINAL E SIMPLIFICADA
-                const recommendationsText = Array.isArray(item.security_recommendations) ? item.security_recommendations.map(r => `[${r.risk}] ${r.details}`).join('; ') : getValue(item.security_recommendations);
-
-                row.innerHTML = `
-                    <td>${getValue(item.ip)}</td>
-                    <td>${getValue(item.open_ports_details)}</td>
-                    <td>${recommendationsText}</td>
-                    <td class="${statusClass}">${getValue(item.status)}</td>
-                `;
-            } else {
-                row.innerHTML = `
-                    <td>${getValue(item.ip)}</td>
-                    <td>${getValue(item.hostname)}</td>
-                    <td>${getValue(item.country)}</td>
-                    <td>${getValue(item.city)}</td>
-                    <td>${getValue(item.open_ports)}</td>
-                    <td>${getValue(item.abuse_score)}</td>
-                    <td class="${statusClass}">${getValue(item.status)}</td>
-                `;
-            }
-            resultsBody.appendChild(row);
-        });
-    };
+        resultsBody.appendChild(row);
+    });
+};
 
     // --- 3. Event Listeners ---
 

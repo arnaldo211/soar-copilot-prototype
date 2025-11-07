@@ -1,4 +1,4 @@
-# api.py - VERSÃO 13.0 (CORRIGIDO E UNIFICADO)
+# api.py - VERSÃO 14.1 (LÓGICA DE RESPOSTA CORRIGIDA)
 import os
 from functools import wraps
 from flask import Flask, jsonify, request
@@ -10,7 +10,6 @@ from logic import (
     initialize_database,
     is_cache_valid,
     get_report_from_db,
-    save_to_db,
     analyze_ip_external,
     analyze_ip_internal
 )
@@ -24,7 +23,8 @@ API_KEY = os.environ.get("API_SECRET_KEY")
 app = Flask(__name__)
 CORS(app) # Habilita o CORS para permitir que o front-end acesse a API
 
-# Garante que o banco de dados exista ao iniciar a API
+# Garante que o banco de dados e a tabela existam ao iniciar a API
+# NOTA: Com PostgreSQL, a inicialização é um pouco diferente, mas esta chamada ainda é segura.
 initialize_database()
 
 # --- DECORADOR DE AUTENTICAÇÃO ---
@@ -45,7 +45,7 @@ def require_api_key(f):
 @app.route('/')
 def index():
     """Endpoint principal para verificar se a API está no ar."""
-    return "<h1>IP Intelligence Service v13.0</h1><p>API está online.</p>"
+    return "<h1>IP Intelligence Service v14.1</h1><p>API está online e conectada ao PostgreSQL.</p>"
 
 @app.route('/query/<string:ip>', methods=['GET'])
 @require_api_key
@@ -60,29 +60,39 @@ def query_ip_endpoint(ip):
 
 @app.route('/analyze', methods=['POST'])
 @require_api_key
-def analyze_ips_external_endpoint():
-    """Endpoint para solicitar a análise EXTERNA de um ou mais IPs."""
+def analyze_ips_endpoint():
+    """
+    Endpoint para solicitar a análise EXTERNA de um ou mais IPs.
+    Sempre retorna o relatório completo, seja de uma nova análise ou do cache.
+    """
     data = request.get_json()
     if not data or 'ips' not in data or not isinstance(data['ips'], list):
         return jsonify({"error": "Requisição inválida. Forneça um JSON com uma chave 'ips' contendo uma lista."}), 400
 
     ips = data['ips']
-    app.logger.info(f"Recebida requisição POST para /analyze (externo) com {len(ips)} IPs.")
+    app.logger.info(f"Recebida requisição POST para /analyze com {len(ips)} IPs.")
     
-    results_summary = []
+    results = [] # A lista agora se chama 'results' para clareza
     for ip in ips:
+        # LÓGICA CORRIGIDA AQUI:
         if is_cache_valid(ip):
-            results_summary.append({"status": "cached", "ip": ip})
-        else:
-            analysis_result = analyze_ip_external(ip)
-            if "error" in analysis_result:
-                app.logger.error(f"Erro ao analisar {ip}: {analysis_result['error']}")
-                results_summary.append({"status": "error", "ip": ip, "message": analysis_result['error']})
+            # Se está no cache, BUSQUE os dados completos do DB
+            app.logger.info(f"IP {ip} encontrado no cache. Buscando dados do DB.")
+            report = get_report_from_db(ip)
+            if report:
+                report['status'] = 'cached' # Adiciona o status de cache
+                results.append(report)
             else:
-                save_to_db(analysis_result)
-                results_summary.append({"status": "analyzed", "ip": ip})
+                # Caso raro: cache válido, mas não encontrou no DB. Analisa de novo.
+                analysis_result = analyze_ip_external(ip)
+                results.append(analysis_result)
+        else:
+            # Se não está no cache, analise e obtenha o relatório completo
+            app.logger.info(f"IP {ip} não encontrado no cache ou cache expirado. Iniciando nova análise.")
+            analysis_result = analyze_ip_external(ip)
+            results.append(analysis_result)
                 
-    return jsonify({"analysis_summary": results_summary})
+    return jsonify({"analysis_summary": results}) # Retorna a lista completa
 
 @app.route('/analyze/internal', methods=['POST'])
 @require_api_key

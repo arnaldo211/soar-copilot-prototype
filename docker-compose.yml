@@ -1,32 +1,43 @@
-# docker-compose.yml
-# Define a versão do formato do arquivo Docker Compose.
+# docker-compose.yml - VERSÃO 14.1 (COM HEALTHCHECK)
 version: '3.8'
 
-# Define os serviços (contêineres) que compõem nossa aplicação.
 services:
-  # O nome do nosso serviço. Podemos chamar de 'api', 'web', etc.
-  ip-intelligence-api:
-    # 'build: .' diz ao Compose para construir a imagem a partir do Dockerfile
-    # que está no mesmo diretório (o diretório atual).
+  # Serviço 1: Nossa API Python
+  api:
     build: .
-    
-    # Nome do contêiner que será criado.
-    container_name: ip_api_service_compose
-    
-    # Mapeia a porta 5000 do host (seu computador) para a porta 5000 do contêiner.
+    container_name: ip_intel_api_service
     ports:
       - "5000:5000"
-      
-    # 'volumes' permite persistir dados. Aqui, estamos mapeando o arquivo
-    # do banco de dados local para dentro do contêiner.
-    # Isso garante que, mesmo que o contêiner seja recriado, os dados do
-    # banco de dados não sejam perdidos.
-    # Sintaxe: [caminho_no_host]:[caminho_no_contêiner]
-    volumes:
-      - ./ip_intelligence.db:/app/ip_intelligence.db
-      
-    # 'restart: unless-stopped' diz ao Docker para reiniciar automaticamente
-    # o contêiner se ele parar por algum motivo, a menos que você o pare manualmente.
-    # Ótimo para garantir que seu serviço esteja sempre no ar.
-    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      db: # <-- AQUI ESTÁ A MUDANÇA
+        condition: service_healthy # <-- A API agora espera o DB ficar "saudável"
+    networks:
+      - app-network
 
+  # Serviço 2: O Banco de Dados PostgreSQL
+  db:
+    image: postgres:14-alpine
+    container_name: ip_intel_db_service
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    # --- NOVO BLOCO DE HEALTHCHECK ---
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
